@@ -28,6 +28,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -39,12 +40,15 @@ public class MainActivity extends AppCompatActivity implements
         PlaceSelectionListener {
 
     private final int LOCATION_REQUESTCODE = 101;
+    private final int ZOOM_RATE = 14;
 
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
     private MapFragment mMapFragment;
     private PlaceAutocompleteFragment mPlaceAutocompleteFragment;
+    private LatLng mSelectedPlace;
+    private LatLng mCurrentlatlng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,13 +131,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
+                        // In case permission not granted, impossible anyway
                         return;
                     }
                     mGoogleApiClient.connect();
@@ -160,11 +158,12 @@ public class MainActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap map) {
         mMap = map;
         if (mCurrentLocation != null) {
-            mMap.addMarker(new MarkerOptions().position(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()))
-                    .title("Current Location"));
+            mCurrentlatlng =  new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude());
+            mMap.addMarker(new MarkerOptions().position(mCurrentlatlng)
+                    .title("Current Location").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
             //zoom in to street
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()),14));
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mCurrentlatlng,ZOOM_RATE));
         }
     }
 
@@ -177,13 +176,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+            //in case permission is not granted, not possible
             return;
         }
         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
@@ -214,7 +207,17 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onPlaceSelected(Place place) {
+        //place selected
+        mSelectedPlace = place.getLatLng();
+        mMap.clear();
 
+        if (mSelectedPlace != null) {
+            mMap.addMarker(new MarkerOptions().position(mSelectedPlace)
+                    .title("Selected Location"));
+
+            //zoom in to street
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mSelectedPlace, ZOOM_RATE));
+        }
     }
 
     @Override
