@@ -20,6 +20,11 @@ import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -30,7 +35,8 @@ import com.google.android.gms.location.LocationServices;
 
 public class MainActivity extends AppCompatActivity implements
         GoogleMap.OnMarkerClickListener,
-        OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+        OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+        PlaceSelectionListener {
 
     private final int LOCATION_REQUESTCODE = 101;
 
@@ -38,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
     private MapFragment mMapFragment;
+    private PlaceAutocompleteFragment mPlaceAutocompleteFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +63,9 @@ public class MainActivity extends AppCompatActivity implements
                     .build();
         }
 
+        //set place search
+        mPlaceAutocompleteFragment = (PlaceAutocompleteFragment) getFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+        mPlaceAutocompleteFragment.setOnPlaceSelectedListener(this);
 
         //Tab 1
         TabHost.TabSpec spec = mTabhost.newTabSpec("Map");
@@ -152,6 +162,9 @@ public class MainActivity extends AppCompatActivity implements
         if (mCurrentLocation != null) {
             mMap.addMarker(new MarkerOptions().position(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()))
                     .title("Current Location"));
+
+            //zoom in to street
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()),14));
         }
     }
 
@@ -199,4 +212,13 @@ public class MainActivity extends AppCompatActivity implements
         super.onStop();
     }
 
+    @Override
+    public void onPlaceSelected(Place place) {
+
+    }
+
+    @Override
+    public void onError(Status status) {
+
+    }
 }
